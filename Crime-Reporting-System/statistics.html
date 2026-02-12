@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crime Data Analysis</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            text-align: center;
+        }
+        .chart-container {
+            width: 50%;
+            margin: 0 auto;
+        }
+    </style>
+
+<title>Assign Police</title>
+<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+<link href="http://fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+
+</head>
+<body>
+    <nav  class="navbar navbar-default navbar-fixed-top">
+        <div class="container">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="home.php"><b>Crime Portal</b></a>
+          </div>
+          <div id="navbar" class="collapse navbar-collapse">
+            <ul class="nav navbar-nav">
+              <li ><a href="official_login.php">Official Login</a></li>
+              <li ><a href="headlogin.php">HQ Login</a></li>
+              <li class="active"><a href="headHome.php">HQ Home</a></li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+              <li class="active" ><a href="headHome.php">View Complaints</a></li>
+              <li class="active" ><a href="statistics.html">Complaints analytics</a></li>
+              <li ><a href="head_view_police_station.php">Police Station</a></li>
+              <li><a href="h_logout.php">Logout &nbsp <i class="fa fa-sign-out" aria-hidden="true"></i></a></li>
+            </ul>
+          </div>
+        </div>
+       </nav>
+<br><br><br><br><br><br><br>
+    <div class="container">
+        <h2>Crime Data Analysis</h2>
+        <div class="chart-container">
+            <canvas id="crimeTypeChart"></canvas>
+        </div>
+        <div class="chart-container">
+            <canvas id="crimeLocationChart"></canvas>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        async function fetchData() {
+            const response = await fetch('fetch_crime_data.php');
+            const data = await response.json();
+            return data;
+        }
+
+        function analyzeData(data) {
+            const locations = {};
+            const crimeTypes = {};
+
+            data.forEach(record => {
+                if (locations[record.location]) {
+                    locations[record.location].count += 1;
+                } else {
+                    locations[record.location] = {
+                        count: 1
+                    };
+                }
+
+                if (crimeTypes[record.type_crime]) {
+                    crimeTypes[record.type_crime].count += 1;
+                } else {
+                    crimeTypes[record.type_crime] = {
+                        count: 1
+                    };
+                }
+            });
+
+            const locationLabels = Object.keys(locations);
+            const locationData = locationLabels.map(location => locations[location].count);
+            const crimeTypeLabels = Object.keys(crimeTypes);
+            const crimeTypeData = crimeTypeLabels.map(type => crimeTypes[type].count);
+
+            return { locationLabels, locationData, crimeTypeLabels, crimeTypeData };
+        }
+
+        function drawCharts(analysis) {
+            const ctx1 = document.getElementById('crimeTypeChart').getContext('2d');
+            new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: analysis.crimeTypeLabels,
+                    datasets: [{
+                        label: 'Number of Crimes by Type',
+                        data: analysis.crimeTypeData,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            const ctx2 = document.getElementById('crimeLocationChart').getContext('2d');
+            new Chart(ctx2, {
+                type: 'pie',
+                data: {
+                    labels: analysis.locationLabels,
+                    datasets: [{
+                        label: 'Number of Crimes by Location',
+                        data: analysis.locationData,
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.2)',
+                            'rgba(54, 162, 235, 0.2)',
+                            'rgba(255, 206, 86, 0.2)'
+                        ],
+                        borderColor: [
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                }
+            });
+        }
+
+        fetchData().then(data => {
+            const analysis = analyzeData(data);
+            drawCharts(analysis);
+        });
+    </script>
+</body>
+</html>
